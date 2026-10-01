@@ -1,27 +1,28 @@
-Lin-Shizuku 模块开发指南
+# Lin-Shizuku 模块开发指南
 
-基于 Joyose掉帧自动优化_v1.0 实测结构整理。Lin 模块与 Magisk / KernelSU 模块在设计哲学上不同：它不刷系统分区、不依赖内核，而是通过 Shizuku 提供的 root 权限 执行脚本，用 WebUI 与用户交互。适合做「运行时进程监控 / 系统调优 / 服务管理」类模块。
-
----
-
-一、Lin 模块 vs Magisk / KernelSU
-
-维度 Magisk / KernelSU Lin-Shizuku
-运行环境 内核级 / 系统分区 Shizuku（root 或 ADB 权限）
-安装位置 /data/adb/modules/<id>/ /data/local/tmp/Lin-Shizuku/module/<id>/
-系统修改 systemless overlayfs / magic mount 不支持，只做运行时操作
-启停机制 post-fs-data.sh / service.sh 自动执行 模块页开关 → run.sh 的 #on / #off 块
-开机自启 有 无（40 轮 APK 只自启 Shizuku）
-安装钩子 customize.sh 自动执行 无（安装 = 解压 + module.json 声明）
-卸载钩子 uninstall.sh 自动执行 无（uninstall.sh 是手动清理入口）
-WebUI 需 KernelSU 的 kernelsu npm 包 经 Lin 桥 ksu.exec(cmd, opts, cb)
-元数据 module.prop module.prop + module.json 双份
-
-结论：Lin 模块本质是「Shizuku 权限下运行的脚本 + WebUI 控制台」，能力边界 = shell 能做什么。
+基于 `Joyose掉帧自动优化_v1.0` 实测结构整理。Lin 模块与 Magisk / KernelSU 模块在**设计哲学**上不同：它不刷系统分区、不依赖内核，而是通过 **Shizuku 提供的 root 权限** 执行脚本，用 **WebUI** 与用户交互。适合做「运行时进程监控 / 系统调优 / 服务管理」类模块。
 
 ---
 
-二、目录结构
+## 一、Lin 模块 vs Magisk / KernelSU
+
+| 维度 | Magisk / KernelSU | Lin-Shizuku |
+|---|---|---|
+| 运行环境 | 内核级 / 系统分区 | Shizuku（root 或 ADB 权限） |
+| 安装位置 | `/data/adb/modules/<id>/` | `/data/local/tmp/Lin-Shizuku/module/<id>/` |
+| 系统修改 | systemless overlayfs / magic mount | **不支持**，只做运行时操作 |
+| 启停机制 | `post-fs-data.sh` / `service.sh` 自动执行 | 模块页开关 → `run.sh` 的 `#on` / `#off` 块 |
+| 开机自启 | 有 | **无**（40 轮 APK 只自启 Shizuku） |
+| 安装钩子 | `customize.sh` 自动执行 | 无（安装 = 解压 + `module.json` 声明） |
+| 卸载钩子 | `uninstall.sh` 自动执行 | 无（`uninstall.sh` 是手动清理入口） |
+| WebUI | 需 KernelSU 的 `kernelsu` npm 包 | 经 Lin 桥 `ksu.exec(cmd, opts, cb)` |
+| 元数据 | `module.prop` | `module.prop` + `module.json` 双份 |
+
+**结论**：Lin 模块本质是「Shizuku 权限下运行的脚本 + WebUI 控制台」，能力边界 = shell 能做什么。
+
+---
+
+## 二、目录结构
 
 ```
 /data/local/tmp/Lin-Shizuku/module/<module_id>/
@@ -53,42 +54,40 @@ WebUI 需 KernelSU 的 kernelsu npm 包 经 Lin 桥 ksu.exec(cmd, opts, cb)
     └── .cooldown            # 冷却时间戳
 ```
 
-硬性约定：
-
-· module.prop 和 module.json 都必须存在
-· WebUI 必须在 webroot/index.html
-· 所有脚本路径必须硬编码为绝对路径（Lin 桥执行时不继承 $PWD）
+**硬性约定**：
+- `module.prop` 和 `module.json` 都必须存在
+- WebUI 必须在 `webroot/index.html`
+- 所有脚本路径**必须硬编码**为绝对路径（Lin 桥执行时不继承 `$PWD`）
 
 ---
 
-三、module.prop
+## 三、module.prop
 
 ```
 id=joyse_jank_opt
-name=Joyse掉帧自动优化
+name=Joyose掉帧自动优化
 version=v1.0
-versionCode=3
+versionCode=1
 author=Lin
-description=锁帧/大幅掉帧强停一次Joyse，冷却1分钟防负优化；可自定义游戏监控列表，WebUI控制台
+description=锁帧/大幅掉帧强停一次Joyose，冷却1分钟防负优化；可自定义游戏监控列表，WebUI控制台
 ```
 
 规则：
-
-· id 必须匹配 ^[a-zA-Z][a-zA-Z0-9._-]+$（不能以数字、短横线开头）
-· versionCode 必须是整数
-· 换行必须用 LF，不要 CRLF
-· 不要有 BOM
+- `id` 必须匹配 `^[a-zA-Z][a-zA-Z0-9._-]+$`（不能以数字、短横线开头）
+- `versionCode` 必须是整数
+- 换行必须用 `LF`，不要 `CRLF`
+- 不要有 BOM
 
 ---
 
-四、module.json
+## 四、module.json
 
 ```json
 {
   "id": "joyse_jank_opt",
-  "name": "Joyse掉帧自动优化",
+  "name": "Joyose掉帧自动优化",
   "version": "v1.0",
-  "versionCode": 3,
+  "versionCode": 1,
   "author": "Lin",
   "description": "...",
   "webui": "webroot/index.html"
@@ -96,15 +95,14 @@ description=锁帧/大幅掉帧强停一次Joyse，冷却1分钟防负优化；�
 ```
 
 字段：
-
-· webui：WebUI 入口相对路径，Lin 管理器根据它打开 WebView
-· 其余字段与 module.prop 冗余，兼容不同版本的管理器
+- `webui`：WebUI 入口相对路径，Lin 管理器根据它打开 WebView
+- 其余字段与 `module.prop` 冗余，兼容不同版本的管理器
 
 ---
 
-五、run.sh：模块页开关入口
+## 五、run.sh：模块页开关入口
 
-这是 Lin 模块最核心的约定。模块页开关切换时，Lin 管理器会从 run.sh 中抽取 #on / #off 块执行。
+**这是 Lin 模块最核心的约定**。模块页开关切换时，Lin 管理器会从 `run.sh` 中**抽取 `#on` / `#off` 块**执行。
 
 ```sh
 #!/system/bin/sh
@@ -124,32 +122,30 @@ MODDIR="/data/local/tmp/Lin-Shizuku/module/joyse_jank_opt"
 sh "$MODDIR/scripts/core/stop.sh"
 ```
 
-关键点：
-
-1. #on / #off 块会被单独抽取执行，块内必须自带 MODDIR，不要依赖块外变量
-2. 块内不要写 exit 0（会提前结束抽取的脚本）
-3. 手动入口放在最前面 + exit 0，避免手动执行时进入 #on 块
-4. 开关是唯一启停来源，WebUI 不提供启停按钮
+**关键点**：
+1. `#on` / `#off` 块会被**单独抽取**执行，块内必须自带 `MODDIR`，不要依赖块外变量
+2. 块内不要写 `exit 0`（会提前结束抽取的脚本）
+3. 手动入口放在最前面 + `exit 0`，避免手动执行时进入 `#on` 块
+4. 开关是**唯一启停来源**，WebUI 不提供启停按钮
 
 ---
 
-六、WebUI 与 Lin 桥
+## 六、WebUI 与 Lin 桥
 
-1. 桥注入
+### 桥注入
 
-Lin 管理器把 JS 桥注入到 WebView 的 window.ksu：
+Lin 管理器把 JS 桥注入到 WebView 的 `window.ksu`：
 
 ```js
 ksu.exec(cmd, opts, callbackName)
 ```
 
-实际签名（与 KernelSU 官方 kernelsu npm 包不同）：
+实际签名（与 KernelSU 官方 `kernelsu` npm 包不同）：
+- `cmd`：shell 命令字符串
+- `opts`：`"{}"` 或选项字符串（Lin 版本传空对象）
+- `callbackName`：回调函数名，Lin 通过 `window[callbackName](errno, stdout, stderr)` 回调
 
-· cmd：shell 命令字符串
-· opts："{}" 或选项字符串（Lin 版本传空对象）
-· callbackName：回调函数名，Lin 通过 window[callbackName](errno, stdout, stderr) 回调
-
-2. 通用封装（推荐直接抄）
+### 通用封装（推荐直接抄）
 
 ```js
 var MODDIR = "/data/local/tmp/Lin-Shizuku/module/joyse_jank_opt";
@@ -176,15 +172,14 @@ function sh(cmd, cb) {
 }
 ```
 
-要点：
+**要点**：
+- 必须加**超时兜底**（20s），否则桥异常时回调永不返回
+- 必须**防重复回调**（`done` 标志），桥可能多次触发
+- 回调后 `delete window[n]` 防止内存泄漏
 
-· 必须加超时兜底（20s），否则桥异常时回调永不返回
-· 必须防重复回调（done 标志），桥可能多次触发
-· 回调后 delete window[n] 防止内存泄漏
+### 与脚本交互的三种模式
 
-3. 与脚本交互的三种模式
-
-A. 读配置（base64）
+**A. 读配置（base64）**
 
 ```js
 sh("sh " + MODDIR + "/scripts/config/read.sh all_b64", function(out) {
@@ -192,7 +187,7 @@ sh("sh " + MODDIR + "/scripts/config/read.sh all_b64", function(out) {
 });
 ```
 
-B. 写配置（base64 传 JSON，防注入）
+**B. 写配置（base64 传 JSON，防注入）**
 
 ```js
 var payload = base64Encode(JSON.stringify(state));
@@ -202,7 +197,7 @@ sh("sh " + MODDIR + "/scripts/config/write.sh set_b64 '" + payload + "'", functi
 });
 ```
 
-C. 读状态（JSON）
+**C. 读状态（JSON）**
 
 ```js
 sh("sh " + MODDIR + "/scripts/utils/status.sh", function(out) {
@@ -210,9 +205,9 @@ sh("sh " + MODDIR + "/scripts/utils/status.sh", function(out) {
 });
 ```
 
-4. 状态字段约定
+### 状态字段约定
 
-status.sh 输出标准 JSON，建议字段：
+`status.sh` 输出标准 JSON，建议字段：
 
 ```json
 {
@@ -226,11 +221,11 @@ status.sh 输出标准 JSON，建议字段：
 }
 ```
 
-WebUI 每 5 秒轮询一次 status.sh + tail -n 30 .monitor.log。
+WebUI 每 5 秒轮询一次 `status.sh` + `tail -n 30 .monitor.log`。
 
 ---
 
-七、脚本分层架构（推荐）
+## 七、脚本分层架构（推荐）
 
 ```
 scripts/
@@ -250,9 +245,9 @@ scripts/
 └── monitor.sh          # 主业务循环（由 core/start.sh 拉起）
 ```
 
-关键脚本模板
+### 关键脚本模板
 
-logger.sh
+**logger.sh**
 
 ```sh
 LOG_FILE="$MODDIR/.monitor.log"
@@ -272,7 +267,7 @@ log() {
 }
 ```
 
-start.sh（幂等 + 心跳）
+**start.sh（幂等 + 心跳）**
 
 ```sh
 MODDIR="/data/local/tmp/Lin-Shizuku/module/<module_id>"
@@ -316,7 +311,7 @@ done
 echo "start-failed"; exit 1
 ```
 
-stop.sh（精确匹配防误杀）
+**stop.sh（精确匹配防误杀）**
 
 ```sh
 MODDIR="/data/local/tmp/Lin-Shizuku/module/<module_id>"
@@ -338,7 +333,7 @@ rm -f "$PID_FILE"
 echo "stopped"
 ```
 
-monitor.sh 主循环骨架
+**monitor.sh 主循环骨架**
 
 ```sh
 #!/system/bin/sh
@@ -417,15 +412,16 @@ main
 
 ---
 
-八、配置管理
+## 八、配置管理
 
-双份配置设计
+### 双份配置设计
 
-文件 格式 读者 说明
-settings.json JSON WebUI 权威源，含结构化数组（如监控列表）
-module.conf 扁平键值 monitor.sh 由 write.sh 从 JSON 生成，脚本读取快
+| 文件 | 格式 | 读者 | 说明 |
+|---|---|---|---|
+| `settings.json` | JSON | WebUI | 权威源，含结构化数组（如监控列表） |
+| `module.conf` | 扁平键值 | monitor.sh | 由 write.sh 从 JSON 生成，脚本读取快 |
 
-write.sh 核心流程
+### write.sh 核心流程
 
 ```
 base64 解码 JSON
@@ -439,7 +435,7 @@ base64 解码 JSON
 若 monitor 正在运行 → restart.sh（不擅自拉起）
 ```
 
-JSON 提取函数模板
+### JSON 提取函数模板
 
 ```sh
 json_num() {
@@ -456,47 +452,48 @@ json_bool() {
 }
 ```
 
-避免 grep -o '"key":"value"' 这种脆弱写法，要兼容 "key": value、"key" : "value" 等空格变体。
+**避免 `grep -o '"key":"value"'` 这种脆弱写法**，要兼容 `"key": value`、`"key" : "value"` 等空格变体。
 
 ---
 
-九、安全与稳健性清单
+## 九、安全与稳健性清单
 
-风险 防护
-命令注入 WebUI → 脚本用 base64 传 JSON；脚本内对包名做 case "$pkg" in *[!A-Za-z0-9._-]*) 校验
-路径穿越 不接收路径参数；包名严格正则
-重复启动 start.sh 用 kill -0 + 心跳新鲜度（120s）双重判定
-PID 漂移 pgrep -f "/scripts/monitor\.sh$" 精确尾匹配，排除 sh -c 桥进程
-误杀进程 am force-stop 为主，pgrep + /proc/$p/cmdline 精确匹配为辅
-配置半写 临时文件 + mv 原子替换
-日志膨胀 超 400 行截 200 行
-base64 兼容 base64 -w0 失败降级 base64 \| tr -d '\n'
-桥超时 sh() 封装加 20s 超时 + done 防重
-WebUI 字段缺失 默认 state + 逐字段 != null ? : default 兜底
-子 shell break 失效 `IFS='
-环境差异 脚本用 #!/system/bin/sh，不依赖 bash 特性
-
----
-
-十、开发流程建议
-
-1. 先写 module.prop + module.json，确定 id、name、webui 入口
-2. 搭骨架：run.sh 的 #on / #off 块先做「echo 测试」
-3. 写核心业务脚本（如 monitor.sh），独立终端调试通过后再接 WebUI
-4. 写 config/read.sh / write.sh，用 echo '...' | base64 -w0 手动测试
-5. 写 utils/status.sh，输出 JSON 后用 python -m json.tool 校验
-6. 最后写 WebUI，先做状态显示，再做配置编辑
-7. 实测清单：
-   · 模块页开关开 → start.sh 返回 started PID
-   · 模块页开关关 → stop.sh 返回 stopped
-   · WebUI 保存配置 → write.sh 返回 OK，module.conf 更新
-   · WebUI 刷新状态 → status.sh 返回合法 JSON
-   · 重复点开关 → PID 不变（幂等）
-   · 卸载 → uninstall.sh 清理运行时文件
+| 风险 | 防护 |
+|---|---|
+| **命令注入** | WebUI → 脚本用 base64 传 JSON；脚本内对包名做 `case "$pkg" in *[!A-Za-z0-9._-]*)` 校验 |
+| **路径穿越** | 不接收路径参数；包名严格正则 |
+| **重复启动** | `start.sh` 用 `kill -0` + 心跳新鲜度（120s）双重判定 |
+| **PID 漂移** | `pgrep -f "/scripts/monitor\.sh$"` 精确尾匹配，排除 `sh -c` 桥进程 |
+| **误杀进程** | `am force-stop` 为主，`pgrep` + `/proc/$p/cmdline` 精确匹配为辅 |
+| **配置半写** | 临时文件 + `mv` 原子替换 |
+| **日志膨胀** | 超 400 行截 200 行 |
+| **base64 兼容** | `base64 -w0` 失败降级 `base64 \| tr -d '\n'` |
+| **桥超时** | `sh()` 封装加 20s 超时 + `done` 防重 |
+| **WebUI 字段缺失** | 默认 state + 逐字段 `!= null ? : default` 兜底 |
+| **子 shell break 失效** | `IFS='\|'` + `for pkg in $watch`，不用 `\| while` |
+| **环境差异** | 脚本用 `#!/system/bin/sh`，不依赖 bash 特性 |
 
 ---
 
-十一、调试技巧
+## 十、开发流程建议
+
+1. **先写 module.prop + module.json**，确定 id、name、webui 入口
+2. **搭骨架**：`run.sh` 的 `#on` / `#off` 块先做「echo 测试」
+3. **写核心业务脚本**（如 `monitor.sh`），独立终端调试通过后再接 WebUI
+4. **写 config/read.sh / write.sh**，用 `echo '...' | base64 -w0` 手动测试
+5. **写 utils/status.sh**，输出 JSON 后用 `python -m json.tool` 校验
+6. **最后写 WebUI**，先做状态显示，再做配置编辑
+7. **实测清单**：
+   - 模块页开关开 → `start.sh` 返回 `started PID`
+   - 模块页开关关 → `stop.sh` 返回 `stopped`
+   - WebUI 保存配置 → `write.sh` 返回 `OK`，`module.conf` 更新
+   - WebUI 刷新状态 → `status.sh` 返回合法 JSON
+   - 重复点开关 → PID 不变（幂等）
+   - 卸载 → `uninstall.sh` 清理运行时文件
+
+---
+
+## 十一、调试技巧
 
 ```bash
 # 语法自检
@@ -523,16 +520,16 @@ pgrep -af "monitor.sh"
 
 ---
 
-十二、常见坑
+## 十二、常见坑
 
-坑 原因 解决
-WebUI 一直转圈 桥回调没触发 加超时兜底 + 检查 ksu.exec 是否存在
-PID 一直在变 pgrep -f monitor.sh 匹配到桥进程 用 monitor\.sh$ 精确尾匹配
-保存配置无反应 base64 -w0 不支持 降级 base64 \| tr -d '\n'
-配置读出来是 undefined JSON 缺字段 WebUI 端合并 DEFAULT_STATE
-采样间隔不生效 多包串行 sleep 批量 reset → 统一 sleep → 逐个读取
-强停没效果 Joyose 被系统自拉起 加验证日志，建议用户关 Joyose 自启
-日志太大 无轮转 logger.sh 里加行数截断
-开关关不掉 #off 块有 exit 0 移除块内 exit
-脚本找不到 硬编码路径写错 所有脚本顶部 MODDIR="..." 用绝对路径
-
+| 坑 | 原因 | 解决 |
+|---|---|---|
+| WebUI 一直转圈 | 桥回调没触发 | 加超时兜底 + 检查 `ksu.exec` 是否存在 |
+| PID 一直在变 | `pgrep -f monitor.sh` 匹配到桥进程 | 用 `monitor\.sh$` 精确尾匹配 |
+| 保存配置无反应 | `base64 -w0` 不支持 | 降级 `base64 \| tr -d '\n'` |
+| 配置读出来是 undefined | JSON 缺字段 | WebUI 端合并 DEFAULT_STATE |
+| 采样间隔不生效 | 多包串行 sleep | 批量 reset → 统一 sleep → 逐个读取 |
+| 强停没效果 | Joyose 被系统自拉起 | 加验证日志，建议用户关 Joyose 自启 |
+| 日志太大 | 无轮转 | logger.sh 里加行数截断 |
+| 开关关不掉 | `#off` 块有 `exit 0` | 移除块内 `exit` |
+| 脚本找不到 | 硬编码路径写错 | 所有脚本顶部 `MODDIR="..."` 用绝对路径 |
